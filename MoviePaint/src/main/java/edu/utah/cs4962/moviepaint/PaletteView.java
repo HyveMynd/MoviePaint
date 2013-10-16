@@ -19,7 +19,6 @@ import android.widget.Button;
 public class PaletteView extends ViewGroup{
 
     private boolean isMixing;
-//    private Bitmap paletteBitmap;
     Button mixButton;
     private OnColorChangeListener onColorChangeListener;
 
@@ -78,8 +77,6 @@ public class PaletteView extends ViewGroup{
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-//        paletteBitmap = Bitmap.createScaledBitmap(paletteBitmap, this.getWidth(), this.getHeight(), false);
-//        canvas.drawBitmap(paletteBitmap, 0, 0, null);
         canvas.drawColor(Color.WHITE);
     }
 
@@ -108,7 +105,6 @@ public class PaletteView extends ViewGroup{
         int numChildren = getChildCount() - 1;
         float paletteWidth = (float)getWidth();
         float paletteHeight = (float)getHeight();
-        float angle = 2.6f;
 
         for (int childIndex = 0; childIndex < getChildCount(); childIndex++){
             View child = getChildAt(childIndex);
@@ -118,11 +114,7 @@ public class PaletteView extends ViewGroup{
             float centerY = (float)getHeight() / 2f;
             if (child instanceof PaintBlotchView){
                 // Calculate where to put view around ellipse
-//                float angle = (float)(2.0f * Math.PI) * ((float)childIndex / (float) numChildren);
-                angle -= .2f;
-                if (angle == -2.8000007f){
-                    angle = 2.4f;
-                }
+                float angle = (float)(2.0f * Math.PI) * ((float)childIndex / (float) numChildren);
                 centerX = (paletteWidth * 0.5f) + ((paletteWidth * 0.4f) * FloatMath.cos(angle));
                 centerY = (paletteHeight * 0.5f) + ((paletteHeight * 0.4f) * FloatMath.sin(angle));
             } else {
@@ -144,11 +136,6 @@ public class PaletteView extends ViewGroup{
         float magenta = selectedColor.getMagenta() - ((selectedColor.getMagenta() - previousColor.getMagenta()) / 2f);
         float yellow = selectedColor.getYellow() - ((selectedColor.getYellow() - previousColor.getYellow()) / 2f);
         float black = selectedColor.getBlack() - ((selectedColor.getBlack() - previousColor.getBlack()) / 2f);
-//        float cyan = (selectedColor.getCyan() + previousColor.getCyan()) / 2f;
-//        float magenta = (selectedColor.getMagenta() + previousColor.getMagenta()) / 2f;
-//        float yellow = (selectedColor.getYellow() + previousColor.getYellow()) / 2f;
-//        float black = (selectedColor.getBlack() + previousColor.getBlack()) / 2f;
-
         return addColorToPalette(cyan, magenta, yellow, black);
     }
 
