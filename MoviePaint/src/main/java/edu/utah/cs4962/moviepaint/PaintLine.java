@@ -4,6 +4,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.view.MotionEvent;
+import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +14,17 @@ import java.util.List;
  * Created by Andres on 9/21/13.
  */
 public class PaintLine {
+    private int color;
     private Path mPath;
     private Paint mPaint;
-    private List<Path> paths = new ArrayList<Path>();
+    private List<Path> paths;
 
     public PaintLine(int color) {
+        this.color = color;
+        paths = new ArrayList<Path>();
+        mPath = new Path();
         mPaint = new Paint();
+
         mPaint.setAntiAlias(true);
         mPaint.setDither(true);
         mPaint.setColor(color);
@@ -25,7 +32,6 @@ public class PaintLine {
         mPaint.setStrokeJoin(Paint.Join.ROUND);
         mPaint.setStrokeCap(Paint.Cap.ROUND);
         mPaint.setStrokeWidth(6);
-        mPath = new Path();
         paths.add(mPath);
     }
 
@@ -44,4 +50,5 @@ public class PaintLine {
     public void setPath(Path mPath) {
         this.mPath = mPath;
     }
+
 }

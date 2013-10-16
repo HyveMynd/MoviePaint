@@ -13,7 +13,7 @@ public class PaletteActivity extends Activity {
 //    private OnColorChangeListener colorChanged = new OnColorChangeListener() {
 //        @Override
 //        public void onColorChange(CmykColor color) {
-//            paintAreaView.setPaintColor(color);
+//            paintAreaView.setPaintLineColor(color);
 //        }
 //    };
 

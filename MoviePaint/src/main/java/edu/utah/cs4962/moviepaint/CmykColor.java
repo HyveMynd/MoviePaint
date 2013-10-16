@@ -28,6 +28,10 @@ public class CmykColor {
         yellow = (1f - b - black) / (1f - black);
     }
 
+    public CmykColor(int color){
+        this(Color.red(color), Color.green(color), Color.blue(color));
+    }
+
     private float getMax(float r, float g, float b) {
         float m1 = Math.max(r, g);
         float m2 = Math.max(g, b);

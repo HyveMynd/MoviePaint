@@ -13,6 +13,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by Andres on 9/18/13.
  */
@@ -69,7 +72,6 @@ public class PaletteView extends ViewGroup{
             }
         });
         this.addView(mixButton);
-
         // Setup bitmap
 //        paletteBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.painterspalette);
     }
@@ -89,6 +91,15 @@ public class PaletteView extends ViewGroup{
      */
     public PaintBlotchView addColorToPalette(float cyan, float magenta, float yellow, float black){
         CmykColor color = new CmykColor(cyan, magenta, yellow, black);
+        return addColorToPalette(color);
+    }
+
+    public PaintBlotchView addColorToPalette(int rgbColor){
+        CmykColor color = new CmykColor(rgbColor);
+        return addColorToPalette(color);
+    }
+
+    private PaintBlotchView addColorToPalette(CmykColor color){
         PaintBlotchView paint = new PaintBlotchView(this.getContext(), color);
         paint.setOnClickListener(selectedPaint);
         this.addView(paint);
@@ -145,6 +156,24 @@ public class PaletteView extends ViewGroup{
             PaintBlotchView paintBlotchView = (PaintBlotchView)view;
             paintBlotchView.setIsActive(false);
             this.removeViewAt(viewIndex);
+        }
+    }
+
+    public ArrayList<Integer> getPaletteColors(){
+        ArrayList<Integer> colors = new ArrayList<Integer>();
+        for (int i = 0; i < this.getChildCount(); i++){
+            View child = this.getChildAt(i);
+            if (child instanceof PaintBlotchView){
+                PaintBlotchView blotchView = (PaintBlotchView)child;
+                colors.add(blotchView.getColor().getRgbColor());
+            }
+        }
+        return colors;
+    }
+
+    public void setPaletteColors(List<Integer> rgbColors){
+        for (Integer color : rgbColors){
+            addColorToPalette(color);
         }
     }
 

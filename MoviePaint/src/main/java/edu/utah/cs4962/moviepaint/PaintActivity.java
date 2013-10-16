@@ -9,10 +9,12 @@ public class PaintActivity extends Activity {
 
     private PaintAreaView paintAreaView;
     private PaletteView paletteView;
+    private static final String PAINT_LINES = "paintLines";
+    private static final String PALETTE_COLORS = "paletteColors";
     private OnColorChangeListener colorChanged = new OnColorChangeListener() {
         @Override
         public void onColorChange(CmykColor color) {
-            paintAreaView.setPaintColor(color);
+            paintAreaView.setPaintLineColor(color);
         }
     };
 
@@ -36,5 +38,17 @@ public class PaintActivity extends Activity {
         setContentView(mainViewGroup);
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(PAINT_LINES, paintAreaView.getPaintPaths());
+//        outState.putIntegerArrayList(PALETTE_COLORS, paletteView.getPaletteColors());
+    }
 
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        paintAreaView.setPaintPaths(savedInstanceState.getParcelableArrayList(PAINT_LINES));
+//        paletteView.setPaletteColors(savedInstanceState.getIntegerArrayList(PALETTE_COLORS));
+    }
 }

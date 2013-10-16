@@ -1,9 +1,11 @@
 package edu.utah.cs4962.moviepaint;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Path;
+import android.graphics.drawable.GradientDrawable;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -20,6 +22,10 @@ public class PaintAreaView extends View implements View.OnTouchListener{
     private static final float TOUCH_TOLERANCE = 4;
     private List<PaintLine> paintLines;
     private PaintLine currentLine;
+    private int currentRgbColor;
+    private ArrayList<PaintPath> paintPaths;
+    private float width;
+    private float height;
 
     public PaintAreaView(Context context) {
         super(context);
@@ -29,6 +35,7 @@ public class PaintAreaView extends View implements View.OnTouchListener{
         this.setOnTouchListener(this);
         paintLines = new ArrayList<PaintLine>();
         currentLine = new PaintLine(Color.WHITE);
+        paintPaths = new ArrayList<PaintPath>();
         paintLines.add(currentLine);
         mCanvas = new Canvas();
     }
@@ -36,11 +43,14 @@ public class PaintAreaView extends View implements View.OnTouchListener{
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        width = w;
+        height = h;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawColor(Color.WHITE);
+        drawPaths();
         for (PaintLine pl : paintLines){
             for (Path p : pl.getPaths()){
                 canvas.drawPath(p, pl.getPaint());
@@ -49,6 +59,9 @@ public class PaintAreaView extends View implements View.OnTouchListener{
     }
 
     private void touch_start(float x, float y) {
+        x *= width;
+        y *= height;
+
         currentLine.getPath().reset();
         currentLine.getPath().moveTo(x, y);
         mX = x;
@@ -56,6 +69,9 @@ public class PaintAreaView extends View implements View.OnTouchListener{
     }
 
     private void touch_move(float x, float y) {
+        x *= width;
+        y *= height;
+
         float dx = Math.abs(x - mX);
         float dy = Math.abs(y - mY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
@@ -71,7 +87,6 @@ public class PaintAreaView extends View implements View.OnTouchListener{
         mCanvas.drawPath(currentLine.getPath(), currentLine.getPaint());
         // kill this so we don't double draw
         currentLine.setPath(new Path());
-        currentLine.getPaths().add(currentLine.getPath());
     }
 
     @Override
@@ -79,26 +94,57 @@ public class PaintAreaView extends View implements View.OnTouchListener{
         float x = event.getX();
         float y = event.getY();
 
+        x /= width;
+        y /=  height;
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                touch_start(x, y);
-                invalidate();
+                PaintPath path = new PaintPath(x, y, MotionEvent.ACTION_DOWN);
+                path.color = currentRgbColor;
+                paintPaths.add(path);
                 break;
             case MotionEvent.ACTION_MOVE:
-                touch_move(x, y);
-                invalidate();
+                paintPaths.add(new PaintPath(x,y,MotionEvent.ACTION_MOVE));
                 break;
             case MotionEvent.ACTION_UP:
-                touch_up();
-                invalidate();
+                paintPaths.add(new PaintPath(x,y,MotionEvent.ACTION_UP));
                 break;
         }
+        drawPaths();
         return true;
     }
 
-    public void setPaintColor(CmykColor color) {
-        int rgb = color.getRgbColor();
-        currentLine = new PaintLine(rgb);
-        paintLines.add(currentLine);
+    public void setPaintLineColor(CmykColor color) {
+        this.currentRgbColor = color.getRgbColor();
+    }
+
+    public ArrayList<PaintPath> getPaintPaths() {
+        return paintPaths;
+    }
+
+    public void setPaintPaths(ArrayList paths) {
+        ArrayList<PaintPath> paintPaths  = paths;
+        this.paintPaths = paintPaths;
+    }
+
+    private void drawPaths(){
+        for (PaintPath path : paintPaths){
+            switch (path.motionEvent){
+                case MotionEvent.ACTION_DOWN:
+                    currentLine = new PaintLine(path.color);
+                    paintLines.add(currentLine);
+                    touch_start(path.x, path.y);
+                    invalidate();
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    touch_move(path.x, path.y);
+                    invalidate();
+                    break;
+                case MotionEvent.ACTION_UP:
+                    touch_up();
+                    invalidate();
+                    break;
+            }
+        }
     }
 }
