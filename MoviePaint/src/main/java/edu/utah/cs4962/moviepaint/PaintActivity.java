@@ -11,6 +11,7 @@ public class PaintActivity extends Activity {
     private PaletteView paletteView;
     private static final String PAINT_LINES = "paintLines";
     private static final String PALETTE_COLORS = "paletteColors";
+    private static final String ACTIVE_COLOR = "activeColor";
     private OnColorChangeListener colorChanged = new OnColorChangeListener() {
         @Override
         public void onColorChange(CmykColor color) {
@@ -26,10 +27,6 @@ public class PaintActivity extends Activity {
         paletteView = new PaletteView(this);
 
         // Prepare palette
-        paletteView.addColorToPalette(1,0,0,0);
-        paletteView.addColorToPalette(0,1,0,0);
-        paletteView.addColorToPalette(0,0,1,0);
-        paletteView.addColorToPalette(0,0,0,1);
         paletteView.setOnColorChangeListener(colorChanged);
 
         mainViewGroup.setOrientation(LinearLayout.VERTICAL);
@@ -42,13 +39,17 @@ public class PaintActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(PAINT_LINES, paintAreaView.getPaintPaths());
-//        outState.putIntegerArrayList(PALETTE_COLORS, paletteView.getPaletteColors());
+        outState.putIntegerArrayList(PALETTE_COLORS, paletteView.getPaletteColors());
+        outState.putInt(ACTIVE_COLOR, paletteView.getActiveColor());
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         paintAreaView.setPaintPaths(savedInstanceState.getParcelableArrayList(PAINT_LINES));
-//        paletteView.setPaletteColors(savedInstanceState.getIntegerArrayList(PALETTE_COLORS));
+        paletteView.setPaletteColors(savedInstanceState.getIntegerArrayList(PALETTE_COLORS));
+        int color = savedInstanceState.getInt(ACTIVE_COLOR);
+        paletteView.setActiveColor(color);
+        paintAreaView.setPaintLineColor(new CmykColor(color));
     }
 }

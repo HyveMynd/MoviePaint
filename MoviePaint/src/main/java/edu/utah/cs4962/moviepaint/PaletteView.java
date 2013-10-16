@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -24,6 +25,7 @@ public class PaletteView extends ViewGroup{
     private boolean isMixing;
     Button mixButton;
     private OnColorChangeListener onColorChangeListener;
+    private HashSet<Integer> paletteColors;
 
     // Click listener for paint blotches. Selects the new paint or mixes the new paint.
     private OnClickListener selectedPaint = new OnClickListener() {
@@ -58,6 +60,7 @@ public class PaletteView extends ViewGroup{
         super(context);
         this.isMixing = false;
         setWillNotDraw(false);
+        paletteColors = new HashSet<Integer>();
 
         // Setup mix button
         mixButton = new Button(this.getContext());
@@ -72,8 +75,12 @@ public class PaletteView extends ViewGroup{
             }
         });
         this.addView(mixButton);
-        // Setup bitmap
-//        paletteBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.painterspalette);
+
+        // Add default colors
+        addColorToPalette(1, 0, 0, 0);
+        addColorToPalette(0, 1, 0, 0);
+        addColorToPalette(0, 0, 1, 0);
+        addColorToPalette(0, 0, 0, 1);
     }
 
     @Override
@@ -100,13 +107,17 @@ public class PaletteView extends ViewGroup{
     }
 
     private PaintBlotchView addColorToPalette(CmykColor color){
-        PaintBlotchView paint = new PaintBlotchView(this.getContext(), color);
-        paint.setOnClickListener(selectedPaint);
-        this.addView(paint);
-        isMixing = false;
-        mixButton.setText("Mix");
-        invalidate();
-        return paint;
+        if (!paletteColors.contains(color.getRgbColor())){
+            paletteColors.add(color.getRgbColor());
+            PaintBlotchView paint = new PaintBlotchView(this.getContext(), color);
+            paint.setOnClickListener(selectedPaint);
+            this.addView(paint);
+            isMixing = false;
+            mixButton.setText("Mix");
+            invalidate();
+            return paint;
+        }
+        return null;
     }
 
     @Override
@@ -161,12 +172,8 @@ public class PaletteView extends ViewGroup{
 
     public ArrayList<Integer> getPaletteColors(){
         ArrayList<Integer> colors = new ArrayList<Integer>();
-        for (int i = 0; i < this.getChildCount(); i++){
-            View child = this.getChildAt(i);
-            if (child instanceof PaintBlotchView){
-                PaintBlotchView blotchView = (PaintBlotchView)child;
-                colors.add(blotchView.getColor().getRgbColor());
-            }
+        for (Integer color : paletteColors){
+            colors.add(color);
         }
         return colors;
     }
@@ -174,6 +181,25 @@ public class PaletteView extends ViewGroup{
     public void setPaletteColors(List<Integer> rgbColors){
         for (Integer color : rgbColors){
             addColorToPalette(color);
+        }
+    }
+
+    public int getActiveColor(){
+        for (int i = 0; i < this.getChildCount(); i++){
+            View v = this.getChildAt(i);
+            if (v instanceof PaintBlotchView && ((PaintBlotchView) v).isActive()){
+                return ((PaintBlotchView) v).getColor().getRgbColor();
+            }
+        }
+        return 0;
+    }
+
+    public void setActiveColor(int rgbColor){
+        for (int i = 0; i < this.getChildCount(); i++){
+            View v = this.getChildAt(i);
+            if (v instanceof PaintBlotchView && ((PaintBlotchView) v).getColor().getRgbColor() == rgbColor){
+                ((PaintBlotchView) v).setIsActive(true);
+            }
         }
     }
 
