@@ -3,12 +3,14 @@ package edu.utah.cs4962.moviepaint;
 import android.os.Bundle;
 import android.app.Activity;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 
 public class PaintActivity extends Activity {
 
     private PaintAreaView paintAreaView;
     private PaletteView paletteView;
+    private LinearLayout sideMenu;
     private static final String PAINT_LINES = "paintLines";
     private static final String PALETTE_COLORS = "paletteColors";
     private static final String ACTIVE_COLOR = "activeColor";
@@ -26,12 +28,23 @@ public class PaintActivity extends Activity {
         paintAreaView = new PaintAreaView(this);
         paletteView = new PaletteView(this);
 
+        // Prepare side menu
+        sideMenu = new LinearLayout(this);
+        sideMenu.setOrientation(LinearLayout.HORIZONTAL);
+        Button playModeButton = new Button(this);
+        Button paintModeButton = new Button(this);
+        paintModeButton.setText("Paint Mode");
+        playModeButton.setText("Play Mode");
+        sideMenu.addView(paintModeButton);
+        sideMenu.addView(playModeButton);
+
         // Prepare palette
         paletteView.setOnColorChangeListener(colorChanged);
 
         mainViewGroup.setOrientation(LinearLayout.VERTICAL);
         mainViewGroup.addView(paintAreaView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         mainViewGroup.addView(paletteView,  new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        mainViewGroup.addView(sideMenu, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0));
         setContentView(mainViewGroup);
     }
 
@@ -52,4 +65,5 @@ public class PaintActivity extends Activity {
         paletteView.setActiveColor(color);
         paintAreaView.setPaintLineColor(new CmykColor(color));
     }
+
 }
