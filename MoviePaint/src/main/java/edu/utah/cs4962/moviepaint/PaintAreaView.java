@@ -11,6 +11,7 @@ import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * Created by Andres on 9/18/13.
@@ -128,6 +129,7 @@ public class PaintAreaView extends View implements View.OnTouchListener{
     }
 
     private void drawPaths(){
+        paintLines = new ArrayList<PaintLine>();
         for (PaintPath path : paintPaths){
             switch (path.motionEvent){
                 case MotionEvent.ACTION_DOWN:

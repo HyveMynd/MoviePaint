@@ -19,6 +19,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by andresmonroy on 10/1/13.
@@ -27,15 +31,11 @@ public class PaletteActivity extends Activity {
     private PaletteView paletteView;
     private static final String PALETTE_COLORS = "paletteColors";
     private static final String ACTIVE_COLOR = "activeColor";
-    private boolean isStateSaved;
-    private boolean isStateRestored;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         paletteView = new PaletteView(this);
-        isStateSaved = false;
-        isStateRestored = false;
 
         // Prepare palette
         paletteView.setOnColorChangeListener(new OnColorChangeListener() {
@@ -68,25 +68,12 @@ public class PaletteActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (isStateSaved){
-            return;
-        }
+        ExecutorService exe = Executors.newSingleThreadExecutor();
+        exe.execute(new SaveRestore(0));
+        exe.shutdown();
         try {
-            Gson gson = new Gson();
-            String activeString = gson.toJson(paletteView.getActiveColor());
-            String colorsString = gson.toJson(paletteView.getPaletteColors());
-
-            // Write active color
-            FileOutputStream fos = openFileOutput(ACTIVE_COLOR, Context.MODE_PRIVATE);
-            IOUtils.write(activeString, fos);
-            fos.close();
-
-            // Write palette colors
-            fos = openFileOutput(PALETTE_COLORS, Context.MODE_PRIVATE);
-            IOUtils.write(colorsString, fos);
-            fos.close();
-
-        } catch (IOException e) {
+            exe.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
             Log.e("Error saving", e.getMessage());
         }
     }
@@ -94,25 +81,66 @@ public class PaletteActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (isStateRestored){
-            return;
-        }
+        ExecutorService exe = Executors.newSingleThreadExecutor();
+        exe.execute(new SaveRestore(1));
+        exe.shutdown();
         try {
-            Gson gson = new Gson();
+            exe.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Log.e("Error restoring", e.getMessage());
+        }
+    }
 
-            // Read active color
-            FileInputStream fis = openFileInput(ACTIVE_COLOR);
-            String contents = IOUtils.toString(fis);
-            int activeColor = gson.fromJson(contents, int.class);
-            paletteView.setActiveColor(activeColor);
+    class SaveRestore implements Runnable{
+        private int command;
 
-            // Read palette colors
-            fis = openFileInput(PALETTE_COLORS);
-            contents = IOUtils.toString(fis);
-            Collection<Integer> colors = gson.fromJson(contents, new TypeToken<Collection<Integer>>(){}.getType());
-            paletteView.setPaletteColors(colors);
-        } catch (IOException e){
-            Log.e("Error reading", e.getMessage());
+        public SaveRestore(int command){
+            this.command = command;
+        }
+
+        @Override
+        public void run() {
+            if (command == 0){
+                try {
+                    Gson gson = new Gson();
+                    String activeString = gson.toJson(paletteView.getActiveColor());
+                    String colorsString = gson.toJson(paletteView.getPaletteColors());
+
+                    // Write active color
+                    FileOutputStream fos = openFileOutput(ACTIVE_COLOR, Context.MODE_PRIVATE);
+                    IOUtils.write(activeString, fos);
+                    fos.close();
+
+                    // Write palette colors
+                    fos = openFileOutput(PALETTE_COLORS, Context.MODE_PRIVATE);
+                    IOUtils.write(colorsString, fos);
+                    fos.close();
+
+                } catch (IOException e) {
+                    Log.e("Error saving", e.getMessage());
+                }
+            } else {
+                try {
+                    Gson gson = new Gson();
+
+                    // Read active color
+                    FileInputStream fis = openFileInput(ACTIVE_COLOR);
+                    String contents = IOUtils.toString(fis);
+                    int activeColor = gson.fromJson(contents, int.class);
+                    paletteView.setActiveColor(activeColor);
+                    fis.close();
+
+                    // Read palette colors
+                    fis = openFileInput(PALETTE_COLORS);
+                    contents = IOUtils.toString(fis);
+                    Collection<Integer> colors = gson.fromJson(contents, new TypeToken<Collection<Integer>>(){}.getType());
+                    paletteView.setPaletteColors(colors);
+                    fis.close();
+
+                } catch (IOException e){
+                    Log.e("Error reading", e.getMessage());
+                }
+            }
         }
     }
 }
