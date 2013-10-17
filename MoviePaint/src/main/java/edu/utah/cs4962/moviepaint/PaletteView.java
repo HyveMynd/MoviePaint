@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class PaletteView extends ViewGroup{
 
     private boolean isMixing;
     Button mixButton;
+    Button doneButton;
     private OnColorChangeListener onColorChangeListener;
     private HashSet<Integer> paletteColors;
 
@@ -48,10 +50,8 @@ public class PaletteView extends ViewGroup{
             if (isMixing){
                 PaintBlotchView paint = mixPaints(paintView.getColor(), color);
                 paint.setIsActive(true);
-                onColorChangeListener.onColorChange(paint.getColor());
             } else {
                 paintView.setIsActive(true);
-                onColorChangeListener.onColorChange(paintView.getColor());
             }
         }
     };
@@ -64,17 +64,29 @@ public class PaletteView extends ViewGroup{
 
         // Setup mix button
         mixButton = new Button(this.getContext());
-        SpannableString mix = new SpannableString("Mix");
         mixButton.setText("Mix");
         mixButton.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         mixButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 isMixing = true;
-                mixButton.setText("Mixing");
+                //mixButton.setText("Mixing");
             }
         });
         this.addView(mixButton);
+
+        // Setup done button
+        doneButton = new Button(this.getContext());
+        doneButton.setText("Done");
+        doneButton.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        doneButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int color = getActiveColor();
+                onColorChangeListener.onColorChange(new CmykColor(color));
+            }
+        });
+        this.addView(doneButton);
 
         // Add default colors
         addColorToPalette(1, 0, 0, 0);
@@ -124,7 +136,7 @@ public class PaletteView extends ViewGroup{
     protected void onLayout(boolean b, int i, int i2, int i3, int i4) {
 
         // Don't take mix button into account
-        int numChildren = getChildCount() - 1;
+        int numChildren = getChildCount() - 2;
         float paletteWidth = (float)getWidth();
         float paletteHeight = (float)getHeight();
 
@@ -149,6 +161,17 @@ public class PaletteView extends ViewGroup{
             r.right = childWidth * 0.5f + centerX;
             r.top = -childHeight * 0.5f + centerY;
             r.bottom = childHeight * 0.5f + centerY;
+
+            if (child instanceof Button){
+                if (((Button) child).getText() == "Mix"){
+                    r.left -= childWidth/2;
+                    r.right -= childWidth/2;
+                } else {
+                    r.right += childWidth/2;
+                    r.left += childWidth/2;
+                }
+            }
+
             child.layout((int)r.left, (int)r.top, (int)r.right, (int)r.bottom);
         }
     }
@@ -178,7 +201,7 @@ public class PaletteView extends ViewGroup{
         return colors;
     }
 
-    public void setPaletteColors(List<Integer> rgbColors){
+    public void setPaletteColors(Collection<Integer> rgbColors){
         for (Integer color : rgbColors){
             addColorToPalette(color);
         }

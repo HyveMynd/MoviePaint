@@ -1,7 +1,10 @@
 package edu.utah.cs4962.moviepaint;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.app.Activity;
+import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -9,41 +12,38 @@ import android.widget.LinearLayout;
 public class PaintActivity extends Activity {
 
     private PaintAreaView paintAreaView;
-    private PaletteView paletteView;
     private LinearLayout sideMenu;
+    private Intent paletteIntent;
     private static final String PAINT_LINES = "paintLines";
-    private static final String PALETTE_COLORS = "paletteColors";
-    private static final String ACTIVE_COLOR = "activeColor";
-    private OnColorChangeListener colorChanged = new OnColorChangeListener() {
-        @Override
-        public void onColorChange(CmykColor color) {
-            paintAreaView.setPaintLineColor(color);
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         LinearLayout mainViewGroup = new LinearLayout(this);
         paintAreaView = new PaintAreaView(this);
-        paletteView = new PaletteView(this);
+        paletteIntent = new Intent(this, PaletteActivity.class);
 
         // Prepare side menu
         sideMenu = new LinearLayout(this);
         sideMenu.setOrientation(LinearLayout.HORIZONTAL);
         Button playModeButton = new Button(this);
         Button paintModeButton = new Button(this);
+        Button colorChooser = new Button(this);
+        colorChooser.setText("Color");
+        colorChooser.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(paletteIntent, 0);
+            }
+        });
         paintModeButton.setText("Paint Mode");
         playModeButton.setText("Play Mode");
         sideMenu.addView(paintModeButton);
         sideMenu.addView(playModeButton);
-
-        // Prepare palette
-        paletteView.setOnColorChangeListener(colorChanged);
+        sideMenu.addView(colorChooser);
 
         mainViewGroup.setOrientation(LinearLayout.VERTICAL);
         mainViewGroup.addView(paintAreaView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        mainViewGroup.addView(paletteView,  new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         mainViewGroup.addView(sideMenu, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0));
         setContentView(mainViewGroup);
     }
@@ -52,18 +52,19 @@ public class PaintActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(PAINT_LINES, paintAreaView.getPaintPaths());
-        outState.putIntegerArrayList(PALETTE_COLORS, paletteView.getPaletteColors());
-        outState.putInt(ACTIVE_COLOR, paletteView.getActiveColor());
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         paintAreaView.setPaintPaths(savedInstanceState.getParcelableArrayList(PAINT_LINES));
-        paletteView.setPaletteColors(savedInstanceState.getIntegerArrayList(PALETTE_COLORS));
-        int color = savedInstanceState.getInt(ACTIVE_COLOR);
-        paletteView.setActiveColor(color);
-        paintAreaView.setPaintLineColor(new CmykColor(color));
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode == RESULT_OK){
+            paintAreaView.setPaintLineColor(new CmykColor(data.getIntExtra("color", 0)));
+        }
+    }
 }
