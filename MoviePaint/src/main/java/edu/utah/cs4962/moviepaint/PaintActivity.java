@@ -20,6 +20,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class PaintActivity extends Activity {
 
@@ -27,7 +30,7 @@ public class PaintActivity extends Activity {
     private LinearLayout sideMenu;
     private LinearLayout buttonLayout;
     private Intent paletteIntent;
-    private static final String PAINT_LINES = "paintLines";
+    private static final String PAINT_LINES_FILE = "paint_paths";
     private Button paintModeButton, colorChooserButton, playModeButton, playButton, pauseButton;
     private SeekBar scrubber;
 
@@ -163,13 +166,13 @@ public class PaintActivity extends Activity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelableArrayList(PAINT_LINES, paintAreaView.getPaintPaths());
+        outState.putParcelableArrayList(PAINT_LINES_FILE, paintAreaView.getPaintPaths());
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        paintAreaView.setPaintPaths(savedInstanceState.getParcelableArrayList(PAINT_LINES));
+        paintAreaView.setPaintPaths(savedInstanceState.getParcelableArrayList(PAINT_LINES_FILE));
     }
 
     @Override
@@ -181,31 +184,67 @@ public class PaintActivity extends Activity {
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
+    protected void onPause() {
+        super.onPause();
+        readWrite(false);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        readWrite(true);
+    }
+
+    private void readWrite(boolean isRead){
+        ExecutorService exe = Executors.newSingleThreadExecutor();
+        exe.execute(new SaveRestorePaths(isRead));
+        exe.shutdown();
+        try {
+            exe.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Log.e("Error during read/write", e.getMessage());
+        }
+    }
+
+    private void writePaintLinesToDisk(){
         try{
             Gson gson  = new Gson();
-            String paintLines = gson.toJson(paintAreaView.getPaintPaths());
-            FileOutputStream fos = openFileOutput(PAINT_LINES, Context.MODE_PRIVATE);
-            IOUtils.write(paintLines, fos);
+            String paintLinesString = gson.toJson(paintAreaView.getPaintPaths());
+            FileOutputStream fos = openFileOutput(PAINT_LINES_FILE, Context.MODE_PRIVATE);
+            IOUtils.write(paintLinesString, fos);
             fos.close();
         } catch (IOException e){
             Log.e("Error saving", e.getMessage());
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private void readPaintLinesFromDisk(){
         try{
             Gson gson  = new Gson();
-            FileInputStream fis = new FileInputStream(PAINT_LINES);
+            FileInputStream fis = openFileInput(PAINT_LINES_FILE);
             String contents = IOUtils.toString(fis);
             ArrayList<PaintPath> paths = gson.fromJson(contents, new TypeToken<ArrayList<PaintPath>>(){}.getType());
             fis.close();
             paintAreaView.setPaintPaths(paths);
         } catch (IOException e){
             Log.e("Error restoring", e.getMessage());
+        }
+
+    }
+
+    class SaveRestorePaths implements Runnable{
+        private boolean isRead;
+
+        public SaveRestorePaths(boolean isRead){
+            this.isRead = isRead;
+        }
+        @Override
+        public void run() {
+            if (isRead){
+                readPaintLinesFromDisk();
+            } else {
+                writePaintLinesToDisk();
+            }
         }
     }
 }
