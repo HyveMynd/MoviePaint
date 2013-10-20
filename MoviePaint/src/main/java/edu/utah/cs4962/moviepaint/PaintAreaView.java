@@ -6,11 +6,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Path;
 import android.graphics.drawable.GradientDrawable;
+import android.util.FloatMath;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Callable;
 
 /**
@@ -27,6 +30,9 @@ public class PaintAreaView extends View implements View.OnTouchListener{
     private ArrayList<PaintPath> paintPaths;
     private float width;
     private float height;
+    private boolean isInPlayMode;
+    private Timer timer;
+    private OnPlayTimeChangeListener onPlayTimeChangeListener;
 
     public PaintAreaView(Context context) {
         super(context);
@@ -39,6 +45,7 @@ public class PaintAreaView extends View implements View.OnTouchListener{
         paintPaths = new ArrayList<PaintPath>();
         paintLines.add(currentLine);
         mCanvas = new Canvas();
+        isInPlayMode = false;
     }
 
     @Override
@@ -92,26 +99,29 @@ public class PaintAreaView extends View implements View.OnTouchListener{
 
     @Override
     public boolean onTouch(View arg0, MotionEvent event) {
-        float x = event.getX();
-        float y = event.getY();
+        // only add more points if the user is in paint mode
+        if (!isInPlayMode){
+            float x = event.getX();
+            float y = event.getY();
 
-        x /= width;
-        y /=  height;
+            x /= width;
+            y /=  height;
 
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                PaintPath path = new PaintPath(x, y, MotionEvent.ACTION_DOWN);
-                path.color = currentRgbColor;
-                paintPaths.add(path);
-                break;
-            case MotionEvent.ACTION_MOVE:
-                paintPaths.add(new PaintPath(x,y,MotionEvent.ACTION_MOVE));
-                break;
-            case MotionEvent.ACTION_UP:
-                paintPaths.add(new PaintPath(x,y,MotionEvent.ACTION_UP));
-                break;
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    PaintPath path = new PaintPath(x, y, MotionEvent.ACTION_DOWN);
+                    path.color = currentRgbColor;
+                    paintPaths.add(path);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    paintPaths.add(new PaintPath(x,y,MotionEvent.ACTION_MOVE));
+                    break;
+                case MotionEvent.ACTION_UP:
+                    paintPaths.add(new PaintPath(x,y,MotionEvent.ACTION_UP));
+                    break;
+            }
+            drawPaths();
         }
-        drawPaths();
         return true;
     }
 
@@ -129,8 +139,14 @@ public class PaintAreaView extends View implements View.OnTouchListener{
     }
 
     private void drawPaths(){
+        if (!isInPlayMode){
+            drawPaths(paintPaths);
+        }
+    }
+
+    private void drawPaths(ArrayList<PaintPath> pathsToDraw){
         paintLines = new ArrayList<PaintLine>();
-        for (PaintPath path : paintPaths){
+        for (PaintPath path : pathsToDraw){
             switch (path.motionEvent){
                 case MotionEvent.ACTION_DOWN:
                     currentLine = new PaintLine(path.color);
@@ -147,6 +163,52 @@ public class PaintAreaView extends View implements View.OnTouchListener{
                     invalidate();
                     break;
             }
+        }
+    }
+
+    public void drawPaths(int progress){
+        // decompose only the specified number of paths
+        ArrayList<PaintPath> pathsToDraw = new ArrayList<PaintPath>();
+        float percent = ((float)progress) / 100f;
+        int numPaths = Math.round((float)paintPaths.size() * percent);
+        for (int i = 0; i < numPaths; i++){
+            pathsToDraw.add(paintPaths.get(i));
+        }
+        pathsToDraw.add(new PaintPath(0,0,MotionEvent.ACTION_UP));
+        drawPaths(pathsToDraw);
+    }
+
+    public boolean isInPlayMode() {
+        return isInPlayMode;
+    }
+
+    public void setPlayMode(boolean isInPlayMode) {
+        this.isInPlayMode = isInPlayMode;
+    }
+
+    public void beginPlay(int progress){
+        drawPaths(progress);
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new PaintTimer(), 1000, 1000);
+    }
+
+    public void pausePlay(){
+        timer.cancel();
+    }
+
+    public OnPlayTimeChangeListener getOnPlayTimeChangeListener() {
+        return onPlayTimeChangeListener;
+    }
+
+    public void setOnPlayTimeChangeListener(OnPlayTimeChangeListener onPlayTimeChangeListener) {
+        this.onPlayTimeChangeListener = onPlayTimeChangeListener;
+    }
+
+    class PaintTimer extends TimerTask{
+
+        @Override
+        public void run() {
+            onPlayTimeChangeListener.onPlayTimeChange();
         }
     }
 }

@@ -76,17 +76,39 @@ public class PaintActivity extends Activity {
         scrubber.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
+                paintAreaView.drawPaths(progress);
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                paintAreaView.drawPaths(seekBar.getProgress());
+            }
+        });
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                paintAreaView.beginPlay(scrubber.getProgress());
+            }
+        });
+        pauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                paintAreaView.pausePlay();
+            }
+        });
+        paintAreaView.setOnPlayTimeChangeListener(new OnPlayTimeChangeListener() {
+            @Override
+            public void onPlayTimeChange() {
+                int progress = scrubber.getProgress() + 1;
+                if (progress <= 100){
+                    scrubber.setProgress(progress);
+                } else {
+                    paintAreaView.pausePlay();
+                }
             }
         });
 
@@ -120,6 +142,8 @@ public class PaintActivity extends Activity {
         playButton.setVisibility(View.VISIBLE);
         pauseButton.setVisibility(View.VISIBLE);
         scrubber.setVisibility(View.VISIBLE);
+
+        paintAreaView.setPlayMode(true);
     }
 
     private void setPaintMode(){
@@ -132,6 +156,8 @@ public class PaintActivity extends Activity {
         // Set visible controls
         colorChooserButton.setVisibility(View.VISIBLE);
         playModeButton.setVisibility(View.VISIBLE);
+
+        paintAreaView.setPlayMode(false);
     }
 
     @Override
